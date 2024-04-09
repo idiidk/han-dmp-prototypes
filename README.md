@@ -1,3 +1,15 @@
-# HAN DMP Prototypes
+# han-dmp-prototypes
 
-This repository contains my prototypes for the first experimental phase of the minor Digital Media Productions at the HAN University of Applied Sciences.
+To install dependencies:
+
+```bash
+bun install
+```
+
+To run:
+
+```bash
+bun run index.ts
+```
+
+This project was created using `bun init` in bun v1.0.20. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
