@@ -1,41 +1,53 @@
-import type { Product } from "./models/product";
-import type { RawSupermarket, Supermarket } from "./models/supermarket";
+import Fuse from "fuse.js";
 
-const ENDPOINT =
-  "https://raw.githubusercontent.com/supermarkt/checkjebon/main/data/supermarkets.json";
+import { fetchSupermarketData } from "./api/api";
+import type { Product } from "./api/models/product";
+import type { Supermarket } from "./api/models/supermarket";
 
-export const fetchRawSupermarketData = async () => {
-  const data = (await fetch(ENDPOINT).then((res) =>
-    res.json()
-  )) as RawSupermarket[];
+const searchTerm = process.argv[2];
+if (!searchTerm) {
+  throw new Error("please specify a search term");
+}
 
-  return data;
-};
+const cache = await Bun.file("./supermarkets.json");
+const content = await cache.text();
 
-export const fetchSupermarketData = async () => {
-  const rawData = await fetchRawSupermarketData();
+let supermarkets: Supermarket[] = [];
 
-  return rawData.map((raw) => {
-    return {
-      name: raw.n,
-      products: raw.d.map((rawProduct) => {
-        return {
-          name: rawProduct.n,
-          link: rawProduct.l,
-          price: rawProduct.p,
-          size: rawProduct.s,
-        } as Product;
-      }),
-      url: raw.u,
-      tag: raw.c,
-      icon: raw.i,
-    } as Supermarket;
-  }) as Supermarket[];
-};
+if (content) {
+  supermarkets = JSON.parse(content);
+} else {
+  supermarkets = await fetchSupermarketData();
+  await Bun.write(cache, JSON.stringify(supermarkets));
+}
 
-const supermarkets = await fetchSupermarketData();
-for (const supermarket of supermarkets) {
-  console.log(
-    `de supermarkt "${supermarket.name}" heeft ${supermarket.products.length} producten waarvan de eerste "${supermarket.products[0]?.name}" die een prijs heeft van: ${supermarket.products[0]?.price}`
-  );
+const allProducts = supermarkets.reduce(
+  (prev, e) => [...prev, ...e.products],
+  [] as Array<Product>
+);
+
+console.log(
+  `searching for ${searchTerm} through ${supermarkets.length} supermarkets and ${allProducts.length} products`
+);
+
+const moddedProducts = allProducts.map((e) => ({
+  uniq: `${e.name} ${e.size} ${e.price}`,
+  name: e.name,
+  link: e.link,
+  price: e.price,
+  size: e.size,
+}));
+
+const fuse = new Fuse(moddedProducts, {
+  keys: ["uniq"],
+});
+
+const results = fuse.search(searchTerm);
+
+console.log("found: ");
+for (let i = 0; i < 3; i++) {
+  const result = results[i];
+  if (!result) continue;
+
+  console.log(result.item.name, result.item.size);
 }
