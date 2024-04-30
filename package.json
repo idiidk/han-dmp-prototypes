@@ -1,14 +1,14 @@
 {
   "name": "han-dmp-prototypes",
   "module": "index.ts",
-  "type": "module",
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
+  "type": "module",
   "dependencies": {
-    "fuse.js": "^7.0.0"
+    "algoliasearch": "^4.23.3"
   }
 }
